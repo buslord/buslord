@@ -1,3 +1,12 @@
+html {
+  font-family: 'Poiret One', cursive;
+}
+
+a {color:#000;}      /* unvisited link */
+a:visited {color:#000;}  /* visited link */
+a:hover {color:#000;}  /* mouse over link */
+a:active {color:#000;}  /* selected link */
+
 html, body {
   height: 100%;
   margin: 0;
@@ -6,4 +15,23 @@ html, body {
 
 #map {
   height: 100%;
+}
+
+.popup {
+  position: absolute;
+  top: 10px;
+  left: 0px;
+  height: 100%;
+  width: 100%;
+  background-color: rgba(255, 255, 255, 0.9);
+  margin: 10px;
+  text-align: center;
+}
+
+.popup .inner {
+  background-color: #FFF;
+  text-align: center;
+  vertical-align: middle;
+  font-size: xx-large;
+  padding-top: 100px;
 }

@@ -6,10 +6,28 @@
   <meta name="viewport" content="width=device-width">
 
   <link href="/static/all.css" media="all" rel="stylesheet" />
-  <script src="/static/all.js"></script>
+  <link href='https://fonts.googleapis.com/css?family=Poiret+One' rel='stylesheet' type='text/css'>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
+  <script src="/static/ui.js"></script>
+  <script src="/static/lord.js"></script>
   <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBdSq6jzntI16ra92bssMUtjsUE-u3aw28&callback=initMap" async defer></script>
 </head>
 <body>
   <div id="map"></div>  
+
+  <div class="popup" id="welcome-popup">
+    <div class="inner">
+      In order to show you the closest bustops you need to allow BusLord to know your location. <br/><br/>
+      <i>"Nah. London centre is fine."</i> <br/>
+      <small>Block the request then drag and drop the pin to move around</small> 
+    </div>
+  </div>
+
+  <div class="popup" id="etas-popup" style="display: none">
+    <div class="inner">
+      <ul id="etas">
+      </ul>
+    </div>
+  </div>
 
 </body>
