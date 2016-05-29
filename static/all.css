@@ -34,4 +34,10 @@ html, body {
   vertical-align: middle;
   font-size: xx-large;
   padding-top: 100px;
+  text-align: center;
+}
+
+#close-etas {
+  text-align: center;
+  font-weight: bold;
 }

@@ -9,6 +9,8 @@ function initMap() {
     zoom: 15
   });
 
+  updateStops(london);
+
   marker = new google.maps.Marker({
     position: london,
     map: map,
@@ -18,31 +20,31 @@ function initMap() {
   });
 
   marker.addListener("dragend", function() {
-    var latLng = marker.getPosition();
-
+    var pos = marker.getPosition();
+    var latLng = {lat: pos.lat(), lng: pos.lng()};
     updateStops(latLng); 
-
     map.setCenter(latLng);
   });
 }
 
 function drawStops(stops) {
-  // TODO this may happen before the map is loaded 
   for (var i = 0; i < stops.length; i++) {
-    var stop = new google.maps.Marker({
-      position: stops.latLng,
+    var stop = stops[i];
+    var marker = new google.maps.Marker({
+      position: stop.lat_lng,
       map: map,
+      animation: google.maps.Animation.DROP,
       icon: "/static/bus-marker-icon.png" 
     });
 
-    stop.addListener("click", function() {
+    marker.addListener("click", function() {
       $("#etas-popup").show();
       $("#etas-popup ul").html("");
       // TODO spinner
-      fetchETAs(stop, function(etas) {
+      fetchETAs(stop.id, function(etas) {
         for (var j = 0; j < etas.length; j++) {
             var eta = etas[j];
-            $("#etas-popup ul").append("<li>" + eta.bus + ": " + eta.eta);
+            $("#etas-popup ul").append("<li>" + eta.bus_name + ": " + eta.eta);
         }
       });
     });
@@ -71,4 +73,9 @@ if ("geolocation" in navigator) {
   alert("no geolocation feats on this browser");
 }
 
-
+$(function() {
+  $('#close-etas').on("click", function(e) {
+    e.preventDefault();
+    $("#etas-popup").hide();
+  });
+});

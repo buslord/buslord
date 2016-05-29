@@ -1,25 +1,16 @@
 
 
 function updateStops(latLng) {
-  fetch('/stops?' + $.param(latLng)).then(function(response) {
+  $.getJSON('/stops?' + $.param(latLng), function(data) {
     // TODO remove out of bound stops
-
-    drawStops(response.json());
+    drawStops(data);
   }); 
 }
 
-function fetchETAs(stop, callback) {
-  fetch('/etas?stop=' + stop.id).then(function(response) {
-    if (callback) {
-      callback(response.json());
-    }
+function fetchETAs(stopID, callback) {
+  console.log("gonna fetch etas");
+  $.getJSON('/etas?stop=' + stopID, function(data) {
+      callback(data);
   });
 }
 
-
-$(document).ready(function() {
-  console.log("loaded");
-
-  updateStops(london);
-
-});
