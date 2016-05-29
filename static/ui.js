@@ -37,19 +37,22 @@ function drawStops(stops) {
       icon: "/static/bus-marker-icon.png" 
     });
 
-    marker.addListener("click", function() {
-      $("#etas-popup").show();
-      $("#etas-popup ul").html("");
-      // TODO spinner
-      fetchETAs(stop.id, function(etas) {
-        for (var j = 0; j < etas.length; j++) {
-            var eta = etas[j];
-            $("#etas-popup ul").append("<li>" + eta.bus_name + ": " + eta.eta);
-        }
-      });
-    });
+    addStopClickListener(marker, stop.id);
   }
 }
+
+function addStopClickListener(marker, stopID) {
+  marker.addListener("click", function(e) {
+    $("#etas-popup").show();
+    $("#etas-popup ul").html("");
+    fetchETAs(stopID, function(etas) {
+      for (var j = 0; j < etas.length; j++) {
+          var eta = etas[j];
+          $("#etas-popup ul").append("<li>" + eta.bus_name + ": " + eta.eta);
+      }
+    });
+  });
+} 
 
 
 var geoWatchID; 
