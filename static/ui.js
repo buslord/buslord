@@ -9,7 +9,10 @@ function initMap() {
     zoom: 15
   });
 
-  updateStops(london);
+  map.addListener("bounds_changed", function() {
+    updateStops(map.getBounds());    
+  });
+
 
   marker = new google.maps.Marker({
     position: london,
@@ -22,7 +25,6 @@ function initMap() {
   marker.addListener("dragend", function() {
     var pos = marker.getPosition();
     var latLng = {lat: pos.lat(), lng: pos.lng()};
-    updateStops(latLng); 
     map.setCenter(latLng);
   });
 }
@@ -61,9 +63,6 @@ if ("geolocation" in navigator) {
 
     var latLng = {lat: position.coords.latitude, lng: position.coords.longitude}; 
 
-    updateStops(latLng);
-
-    map.setCenter(latLng);
     marker.setPosition(latLng);
 
     $("#welcome-popup").hide();
