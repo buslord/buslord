@@ -9,8 +9,9 @@ function updateStops(bounds) {
     "swLng": bounds.getSouthWest().lng()
   };
 
+  // prevent from doing too many calls. cancel the previous and take the last
   $.getJSON('/stops?' + $.param(params), function(data) {
-    // TODO remove out of bound stops
+    // remove out of bound stops
     drawStops(data);
   }); 
 }

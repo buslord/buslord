@@ -9,10 +9,10 @@ function initMap() {
     zoom: 16
   });
 
-  map.addListener("bounds_changed", function() {
-    updateStops(map.getBounds());    
-  });
-
+  // prevent too many requests from happening 
+  map.addListener("bounds_changed", _.throttle(function() {
+    updateStops(map.getBounds());
+  }, 1000));
 
   marker = new google.maps.Marker({
     position: london,
@@ -29,18 +29,40 @@ function initMap() {
   });
 }
 
+var currentStops = {};
+
 function drawStops(stops) {
+  var onScreenStopIDs = [];
   for (var i = 0; i < stops.length; i++) {
     var stop = stops[i];
-    var marker = new google.maps.Marker({
-      position: stop.lat_lng,
-      map: map,
-      animation: google.maps.Animation.DROP,
-      icon: "/static/bus-marker-icon.png" 
-    });
 
-    addStopClickListener(marker, stop.id);
+    onScreenStopIDs.push(stop.id);
+
+    if (currentStops[stop.id]) {
+      // we already have this stop on the map
+      // nothing to do 
+    } else {
+      // create a new marker
+      var marker = new google.maps.Marker({
+        position: stop.lat_lng,
+        map: map,
+        animation: google.maps.Animation.DROP,
+        icon: "/static/bus-marker-icon.png" 
+      });
+      addStopClickListener(marker, stop.id);
+      currentStops[stop.id] = marker;
+    }
   }
+
+  // remove from the map the stops we didn't get
+  var newStops = {};
+  _.forEach(currentStops, function(marker, stopID) {
+      if (_.includes(onScreenStopIDs, stopID) == false) {
+        marker.setMap(null);
+        delete(currentStops[stopID]);
+      }
+  });
+
 }
 
 function addStopClickListener(marker, stopID) {
