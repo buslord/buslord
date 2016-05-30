@@ -6,7 +6,7 @@ var marker;
 function initMap() {
   map = new google.maps.Map(document.getElementById('map'), {
     center: london,
-    zoom: 15
+    zoom: 16
   });
 
   map.addListener("bounds_changed", function() {
@@ -50,7 +50,7 @@ function addStopClickListener(marker, stopID) {
     fetchETAs(stopID, function(etas) {
       for (var j = 0; j < etas.length; j++) {
           var eta = etas[j];
-          $("#etas-popup ul").append("<li>" + eta.bus_name + ": " + eta.eta);
+          $("#etas-popup ul").append("<li>" + eta.line_name + ": " + eta.eta + "<br/>-> " + eta.destination_name + " </li>");
       }
     });
   });

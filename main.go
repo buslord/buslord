@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"strconv"
 	"strings"
 	"time"
 
@@ -57,14 +56,27 @@ type TFLStopPoint struct {
 }
 
 type ETA struct {
-	ID      int64  `json:"id"`
-	BusName string `json:"bus_name"`
-	ETA     int64  `json:"eta"`
+	ID              string    `json:"id"`
+	LineName        string    `json:"line_name"`
+	DestinationName string    `json:"destination_name"`
+	ETA             int64     `json:"eta"`
+	ModeName        string    `json:"mode_name"`
+	TimeToLive      time.Time `json:"time_to_live"`
+}
+
+type TFLArrival struct {
+	ID              string `json:"id"`
+	LineName        string `json:"lineName"`
+	DestinationName string `json:"destinationName"`
+	TimeToStation   int64  `json:"timeToStation"`
+	ModeName        string `json:"modeName"`
+	TimeToLive      string `json:"timeToLive"`
 }
 
 func stopsHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-type", "application/json")
 
+	// validate query params and put them in "vals"
 	vals := map[string]string{}
 	for _, key := range []string{"swLat", "swLng", "neLat", "neLng"} {
 		vals[key] = r.FormValue(key)
@@ -75,15 +87,16 @@ func stopsHandler(w http.ResponseWriter, r *http.Request) {
 
 	}
 
+	// the query params we are going to sent TFL
 	v := url.Values{}
-	v.Add("app_id", "4b537b47")
-	v.Add("app_key", "5173db496aaaf2f26a45dbfb587597d1")
+	v.Add("app_id", config.TFL.AppID)
+	v.Add("app_key", config.TFL.AppKey)
 	v.Add("stopTypes", "NaptanPublicBusCoachTram")
 	v.Add("includeChildren", "False")
 	v.Add("returnLines", "True")
 	v.Add("useStopPointHierarchy", "True")
 
-	// forward the bounds
+	// forward the bound params
 	for key, val := range vals {
 		key = strings.Replace(key, "Lng", "Lon", -1) // google => Lng. tfl => Lon
 		v.Add(key, val)
@@ -133,19 +146,53 @@ func stopsHandler(w http.ResponseWriter, r *http.Request) {
 func etasHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-type", "application/json")
 
-	stop, err := strconv.ParseInt(r.FormValue("stop"), 10, 64)
-	if err != nil {
+	stop := r.FormValue("stop")
+	if stop == "" {
 		errorHandler(w, http.StatusBadRequest, fmt.Errorf("The 'stop' query param is mandatory."))
 		return
 	}
-	log.Printf("got stop: %d", stop)
+	log.Printf("got stop: %s", stop)
 
 	// TODO https://api.tfl.gov.uk/StopPoint/490005183E/arrivals
+	v := url.Values{}
+	v.Add("app_id", "4b537b47")
+	v.Add("app_key", "5173db496aaaf2f26a45dbfb587597d1")
 
-	etas := []ETA{
-		{ID: 98, BusName: "Jardim Social", ETA: 63},
-		{ID: 74, BusName: "Vila Sandra", ETA: 376},
-		{ID: 99, BusName: "Jardim Esplanada", ETA: 476},
+	url := tflBaseURL + "/StopPoint/" + stop + "/arrivals?" + v.Encode()
+	log.Println(url)
+
+	req, err := http.NewRequest("GET", url, nil)
+	resp, err := client.Do(req)
+	if err != nil {
+		errorHandler(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	decoder := json.NewDecoder(resp.Body)
+	var tflArrivals []TFLArrival
+	err = decoder.Decode(&tflArrivals)
+	if err != nil {
+		errorHandler(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	// translate TFL response to the response we want
+	etas := make([]ETA, 0, len(tflArrivals))
+	for _, a := range tflArrivals {
+		timeToLive, err := time.Parse(time.RFC3339, a.TimeToLive)
+		if err != nil {
+			errorHandler(w, http.StatusInternalServerError, err)
+			return
+		}
+		eta := ETA{
+			ID:              a.ID,
+			LineName:        a.LineName,
+			DestinationName: a.DestinationName,
+			ETA:             a.TimeToStation,
+			ModeName:        a.ModeName,
+			TimeToLive:      timeToLive,
+		}
+		etas = append(etas, eta)
 	}
 
 	enc := json.NewEncoder(w)
