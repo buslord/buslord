@@ -50,7 +50,7 @@ type Stop struct {
 
 type TFLStopPoint struct {
 	ID         string  `json:"id"`
-	CommonName string  `json:"common_name"`
+	CommonName string  `json:"commonName"`
 	Lat        float64 `json:"lat"`
 	Lng        float64 `json:"lon"`
 }
@@ -93,7 +93,7 @@ func stopsHandler(w http.ResponseWriter, r *http.Request) {
 	v.Add("app_key", config.TFL.AppKey)
 	v.Add("stopTypes", "NaptanPublicBusCoachTram")
 	v.Add("includeChildren", "False")
-	v.Add("returnLines", "True")
+	v.Add("returnLines", "False")
 	v.Add("useStopPointHierarchy", "True")
 
 	// forward the bound params

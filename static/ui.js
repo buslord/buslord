@@ -27,6 +27,8 @@ function initMap() {
     var latLng = {lat: pos.lat(), lng: pos.lng()};
     map.setCenter(latLng);
   });
+
+  watchCountdowns();
 }
 
 var currentStops = {};
@@ -42,14 +44,15 @@ function drawStops(stops) {
       // we already have this stop on the map
       // nothing to do 
     } else {
-      // create a new marker
-      var marker = new google.maps.Marker({
+    // create a new marker
+    var marker = new google.maps.Marker({
         position: stop.lat_lng,
         map: map,
         animation: google.maps.Animation.DROP,
-        icon: "/static/bus-marker-icon.png" 
+        icon: "/static/bus-marker-icon.png",
+        title: stop.name 
       });
-      addStopClickListener(marker, stop.id);
+      addStopClickListener(marker, stop.id, stop.name);
       currentStops[stop.id] = marker;
     }
   }
@@ -65,19 +68,60 @@ function drawStops(stops) {
 
 }
 
-function addStopClickListener(marker, stopID) {
+
+function addStopClickListener(marker, stopID, stopName) {
   marker.addListener("click", function(e) {
-    $("#etas-popup").show();
-    $("#etas-popup ul").html("");
-    fetchETAs(stopID, function(etas) {
-      for (var j = 0; j < etas.length; j++) {
-          var eta = etas[j];
-          $("#etas-popup ul").append("<li>" + eta.line_name + ": " + eta.eta + "<br/>-> " + eta.destination_name + " </li>");
-      }
-    });
+    buildAndShowEtas(stopID, stopName);
   });
 } 
 
+function buildAndShowEtas(stopID, stopName) {
+    $("#etas-popup").show();
+    $("#etas-popup .stopName").html(stopName);
+    $("#etas-popup table").html("");
+    fetchETAs(stopID, function(etas) {
+      $("#etas-popup table").append("<tr><th>line</th><th>arrival</th></tr>");
+      for (var j = 0; j < etas.length; j++) {
+          var eta = etas[j];
+          if (eta.eta > 5) {
+            var klass = '';
+            if (j % 2 == 0) {
+              klass = 'class="shade"';
+            }
+            $("#etas-popup table").append("<tr " + klass + "><td>" + eta.mode_name + " <b>" + eta.line_name + '</b></td><td class="countdown" stop_name="' + stopName + '" stop_id="' + stopID + '" value="'+ eta.eta +'"></td></li>');
+          }
+      }
+    });
+}
+
+function countdownTick() {
+    $(".countdown").each(function(i, el) {
+      var val = $(el).attr("value");
+      val -= 1;
+      $(el).attr("value", val);
+
+      var mins = Math.floor(val/60);
+      var sVal = "";
+      if (mins > 0) {
+        sVal = mins + "m ";
+      }
+      var seconds = val%60;
+      sVal += seconds + "s";
+  
+      if ((mins == 0) && (seconds < 0)) {
+        buildAndShowEtas($(el).attr("stop_id"), $(el).attr("stop_name"));
+      } else {
+        $(el).html(sVal);
+      }
+    });
+}
+
+function watchCountdowns() {
+  setTimeout(function() {
+    countdownTick();
+    watchCountdowns();
+  }, 1000);
+}
 
 var geoWatchID; 
 if ("geolocation" in navigator) {
@@ -101,5 +145,6 @@ $(function() {
   $('#close-etas').on("click", function(e) {
     e.preventDefault();
     $("#etas-popup").hide();
+    $("#etas-popup table").html("");
   });
 });
