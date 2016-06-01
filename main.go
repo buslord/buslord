@@ -5,9 +5,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"net/url"
 	"os"
-	"strings"
+	"strconv"
 	"time"
 
 	"github.com/bradfitz/gomemcache/memcache"
@@ -40,79 +39,33 @@ func main() {
 	log.Fatal(http.ListenAndServe(":"+os.Getenv("PORT"), nil))
 }
 
-type LatLng struct {
-	Lat float64 `json:"lat"`
-	Lng float64 `json:"lng"`
-}
-
-type Stop struct {
-	ID     string `json:"id"`
-	Name   string `json:"name"`
-	LatLng LatLng `json:"lat_lng"`
-}
-
-type TFLStopPoint struct {
-	ID         string  `json:"id"`
-	CommonName string  `json:"commonName"`
-	Lat        float64 `json:"lat"`
-	Lng        float64 `json:"lon"`
-}
-
 func stopsHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-type", "application/json")
 
-	// validate query params and put them in "vals"
-	vals := map[string]string{}
+	// validate query params
+	vals := map[string]float64{}
 	for _, key := range []string{"swLat", "swLng", "neLat", "neLng"} {
-		vals[key] = r.FormValue(key)
-		if vals[key] == "" {
+		if r.FormValue(key) == "" {
 			errorHandler(w, http.StatusBadRequest, fmt.Errorf("The '%s' query param is mandatory.", key))
 			return
 		}
-
+		f, err := strconv.ParseFloat(r.FormValue(key), 64)
+		if err != nil {
+			errorHandler(w, http.StatusBadRequest, fmt.Errorf("The '%s' query param should be a float.", key))
+			return
+		}
+		vals[key] = f
 	}
 
-	// the query params we are going to sent TFL
-	v := url.Values{}
-	v.Add("app_id", config.TFL.AppID)
-	v.Add("app_key", config.TFL.AppKey)
-	v.Add("stopTypes", "NaptanPublicBusCoachTram")
-	v.Add("includeChildren", "False")
-	v.Add("returnLines", "False")
-	v.Add("useStopPointHierarchy", "True")
-
-	// forward the bound params
-	for key, val := range vals {
-		key = strings.Replace(key, "Lng", "Lon", -1) // google => Lng. tfl => Lon
-		v.Add(key, val)
-	}
-
-	// https://api.tfl.gov.uk/StopPoint?appID=4b537b47&appKey=5173db496aaaf2f26a45dbfb587597d1&includeChildren=False&neLat=51.47450678007974&neLon=0.14333535461423708&returnLines=True&stopTypes=NaptanPublicBusCoachTram&swLat=51.47450678007974&swLon=0.14333535461423708&useStopPointHierarchy=True
-	url := tflBaseURL + "/StopPoint?" + v.Encode()
-
-	req, err := http.NewRequest("GET", url, nil)
-	resp, err := client.Do(req)
+	stops, err := GetStops(
+		vals["swLat"],
+		vals["swLng"],
+		vals["neLat"],
+		vals["neLng"],
+	)
 	if err != nil {
 		errorHandler(w, http.StatusInternalServerError, err)
 		return
-	}
-
-	decoder := json.NewDecoder(resp.Body)
-	var tflStopPoints []TFLStopPoint
-	err = decoder.Decode(&tflStopPoints)
-	if err != nil {
-		errorHandler(w, http.StatusInternalServerError, err)
-		return
-	}
-
-	// translate TFL response to the response we want
-	stops := make([]Stop, 0, len(tflStopPoints))
-	for _, sp := range tflStopPoints {
-		stop := Stop{
-			ID:     sp.ID,
-			Name:   sp.CommonName,
-			LatLng: LatLng{Lat: sp.Lat, Lng: sp.Lng}}
-		stops = append(stops, stop)
 	}
 
 	enc := json.NewEncoder(w)

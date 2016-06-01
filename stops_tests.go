@@ -14,23 +14,23 @@ import (
 func TestStopsHandler(t *testing.T) {
 
 	reqParams := url.Values{}
-	reqParams.Set("swLat", "51.47450678007974")
-	reqParams.Add("swLng", "0.14333535461423708")
-	reqParams.Set("neLat", "51.49450678007974")
-	reqParams.Add("neLng", "0.14533535461423708")
+	reqParams.Set("swLat", "51.47453")
+	reqParams.Add("swLng", "0.143332")
+	reqParams.Set("neLat", "51.49456")
+	reqParams.Add("neLng", "0.145338")
 
 	tflStopPoints := []TFLStopPoint{
 		{
 			ID:         "1234567a",
 			CommonName: "Praça Eufrásio Correia",
-			Lat:        51.47450678007974,
-			Lng:        0.14333535461423708,
+			Lat:        51.474506,
+			Lng:        0.1433353,
 		},
 		{
 			ID:         "ba567a",
 			CommonName: "Catedral da Fé",
-			Lat:        52.47450678007974,
-			Lng:        0.18333535461423708,
+			Lat:        52.474506,
+			Lng:        0.1833353,
 		},
 	}
 
