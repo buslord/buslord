@@ -8,10 +8,14 @@ import (
 )
 
 var config struct {
+	Cache struct {
+		Enabled         bool     `yaml:"enabled"`
+		MemcacheServers []string `yaml:"memcache-servers"`
+	} `yaml:"cache"`
 	TFL struct {
-		AppID  string
-		AppKey string
-	}
+		AppID  string `yaml:"app-id"`
+		AppKey string `yaml:"app-key"`
+	} `yaml:"tfl"`
 }
 
 func init() {

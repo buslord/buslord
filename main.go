@@ -10,11 +10,13 @@ import (
 	"strings"
 	"time"
 
+	"github.com/bradfitz/gomemcache/memcache"
 	"github.com/gorilla/mux"
 )
 
 var (
 	client     *http.Client
+	mc         *memcache.Client
 	tflBaseURL = "https://api.tfl.gov.uk"
 )
 
@@ -22,6 +24,7 @@ func init() {
 	client = &http.Client{
 		Timeout: time.Second * 5,
 	}
+	mc = memcache.New(config.Cache.MemcacheServers...)
 }
 
 func main() {
@@ -55,24 +58,6 @@ type TFLStopPoint struct {
 	Lng        float64 `json:"lon"`
 }
 
-type ETA struct {
-	ID              string    `json:"id"`
-	LineName        string    `json:"line_name"`
-	DestinationName string    `json:"destination_name"`
-	ETA             int64     `json:"eta"`
-	ModeName        string    `json:"mode_name"`
-	TimeToLive      time.Time `json:"time_to_live"`
-}
-
-type TFLArrival struct {
-	ID              string `json:"id"`
-	LineName        string `json:"lineName"`
-	DestinationName string `json:"destinationName"`
-	TimeToStation   int64  `json:"timeToStation"`
-	ModeName        string `json:"modeName"`
-	TimeToLive      string `json:"timeToLive"`
-}
-
 func stopsHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-type", "application/json")
 
@@ -102,14 +87,8 @@ func stopsHandler(w http.ResponseWriter, r *http.Request) {
 		v.Add(key, val)
 	}
 
-	/* TODO
-	   https://api.tfl.gov.uk/StopPoint?swLat=50.50348665698832&swLon=0.1108813941955359&neLat=51.50948665698832&neLon=0.1299913941955359&stopTypes=NaptanPublicBusCoachTram&useStopPointHierarchy=True&includeChildren=True&returnLines=True&app_id=&app_key=
-	   https://api.tfl.gov.uk/StopPoint?appID=4b537b47&appKey=5173db496aaaf2f26a45dbfb587597d1&includeChildren=False&neLat=51.47450678007974&neLon=0.14333535461423708&returnLines=True&stopTypes=NaptanPublicBusCoachTram&swLat=51.47450678007974&swLon=0.14333535461423708&useStopPointHierarchy=True
-
-	*/
-
+	// https://api.tfl.gov.uk/StopPoint?appID=4b537b47&appKey=5173db496aaaf2f26a45dbfb587597d1&includeChildren=False&neLat=51.47450678007974&neLon=0.14333535461423708&returnLines=True&stopTypes=NaptanPublicBusCoachTram&swLat=51.47450678007974&swLon=0.14333535461423708&useStopPointHierarchy=True
 	url := tflBaseURL + "/StopPoint?" + v.Encode()
-	log.Println(url)
 
 	req, err := http.NewRequest("GET", url, nil)
 	resp, err := client.Do(req)
@@ -146,57 +125,21 @@ func stopsHandler(w http.ResponseWriter, r *http.Request) {
 func etasHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-type", "application/json")
 
-	stop := r.FormValue("stop")
-	if stop == "" {
+	stopID := r.FormValue("stop")
+	if stopID == "" {
 		errorHandler(w, http.StatusBadRequest, fmt.Errorf("The 'stop' query param is mandatory."))
 		return
 	}
-	log.Printf("got stop: %s", stop)
 
-	// TODO https://api.tfl.gov.uk/StopPoint/490005183E/arrivals
-	v := url.Values{}
-	v.Add("app_id", "4b537b47")
-	v.Add("app_key", "5173db496aaaf2f26a45dbfb587597d1")
-
-	url := tflBaseURL + "/StopPoint/" + stop + "/arrivals?" + v.Encode()
-	log.Println(url)
-
-	req, err := http.NewRequest("GET", url, nil)
-	resp, err := client.Do(req)
+	etas, err := GetETAs(stopID)
 	if err != nil {
+		// TODO 500 is not always a good answer. 404 is the right thing in cases
 		errorHandler(w, http.StatusInternalServerError, err)
 		return
-	}
-
-	decoder := json.NewDecoder(resp.Body)
-	var tflArrivals []TFLArrival
-	err = decoder.Decode(&tflArrivals)
-	if err != nil {
-		errorHandler(w, http.StatusInternalServerError, err)
-		return
-	}
-
-	// translate TFL response to the response we want
-	etas := make([]ETA, 0, len(tflArrivals))
-	for _, a := range tflArrivals {
-		timeToLive, err := time.Parse(time.RFC3339, a.TimeToLive)
-		if err != nil {
-			errorHandler(w, http.StatusInternalServerError, err)
-			return
-		}
-		eta := ETA{
-			ID:              a.ID,
-			LineName:        a.LineName,
-			DestinationName: a.DestinationName,
-			ETA:             a.TimeToStation,
-			ModeName:        a.ModeName,
-			TimeToLive:      timeToLive,
-		}
-		etas = append(etas, eta)
 	}
 
 	enc := json.NewEncoder(w)
-	if err := enc.Encode(&etas); err != nil {
+	if err := enc.Encode(etas); err != nil {
 		errorHandler(w, http.StatusInternalServerError, err)
 		return
 	}

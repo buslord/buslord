@@ -32,7 +32,12 @@ go test
 
 ## Overal comments
 
-Why a backend? Why wont the js client talk direcly to the TFL api? 
+**Why a backend?** Why wont the js client talk direcly to the TFL api? 
 The backend should compute. If it's just to hide the api secret maybe a better solution would be just to proxy requests to TFL adding the secret query param. 
 One may say that we can do caching. Maybe they are doing the server side caching already. And maybe the client should do caching. 
 One may say that the TFL certainly didn't geodistributed frontends, load balanced based on location with GeoDNS or anycast to minimize the response time. No need the big majority of requests will come from London.  
+
+
+Over the code I used the **names** "Stop" and "ETA". TFL uses "StopPoint" and "Arrival" respectively. I regret my decision of starting with these names because now developers maintaining this code will have to learn both and their mapping to each other. 
+It happened because I took the top down approach and started at what the rider would see. So I was mostly ignorant of the TFL API naming despite giving it a look before starting to code. I created a ticket to use the TFL names (#3) but I decided not to do it for this excercise. 
+
