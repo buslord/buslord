@@ -86,10 +86,29 @@ func TestETAsCacheHandler(t *testing.T) {
 	handlerCalled := false
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		handlerCalled = true
-		// answer stub data
-		var arrivals []TFLArrival
+
+		in2seconds := time.Now().Add(2 * time.Second).Format(time.RFC3339)
+
+		tflArrivals := []TFLArrival{
+			{
+				ID:              "-36453",
+				LineName:        "179",
+				DestinationName: "Ilford",
+				TimeToStation:   1266,
+				ModeName:        "bus",
+				TimeToLive:      time.Now().Add(20 * time.Minute).Format(time.RFC3339),
+			},
+			{
+				ID:              "-2221",
+				LineName:        "212",
+				DestinationName: "St James Street",
+				TimeToStation:   1136,
+				ModeName:        "bus",
+				TimeToLive:      in2seconds,
+			},
+		}
 		enc := json.NewEncoder(w)
-		enc.Encode(&arrivals)
+		enc.Encode(&tflArrivals)
 	}))
 	defer ts.Close()
 
@@ -107,6 +126,14 @@ func TestETAsCacheHandler(t *testing.T) {
 	etasHandler(w, req)
 	// second time, cache hit and API not called
 	assert.Equal(t, false, handlerCalled)
+
+	// wait a second for the cache to expire
+	timer := time.NewTimer(time.Second)
+	<-timer.C
+	handlerCalled = false
+	etasHandler(w, req)
+	// third time, cache miss because it expired, API called
+	assert.Equal(t, true, handlerCalled)
 }
 
 func init() {

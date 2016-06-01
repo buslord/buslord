@@ -67,7 +67,21 @@ func GetETAs(stopID string) (etas ETAs, err error) {
 			return
 		}
 
-		mc.Set(&memcache.Item{Key: key, Value: bs})
+		// take the smallest TimeToLive of the predictions
+		now := time.Now()
+		expiration := now.Add(2 * time.Minute)
+		for _, eta := range etas {
+			if eta.TimeToLive.Before(now) {
+				// discard passed times
+				continue
+			}
+			if eta.TimeToLive.Before(expiration) {
+				expiration = eta.TimeToLive
+			}
+		}
+		expirationSecs := int32(expiration.Sub(now).Seconds())
+
+		mc.Set(&memcache.Item{Key: key, Value: bs, Expiration: expirationSecs})
 	} else if err != nil {
 		log.Println("cache errrr")
 		return
