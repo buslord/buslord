@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"log"
 	"net/http"
@@ -14,20 +15,33 @@ import (
 )
 
 var (
-	client     *http.Client
+	client = &http.Client{
+		Timeout: time.Second * 5,
+	}
+
 	mc         *memcache.Client
 	tflBaseURL = "https://api.tfl.gov.uk"
 )
 
+var runPrefetcher = flag.Bool("prefetcher", false, "run the prefetcher now")
+
 func init() {
-	client = &http.Client{
-		Timeout: time.Second * 5,
-	}
 	mc = memcache.New(config.Cache.MemcacheServers...)
 }
 
 func main() {
+	flag.Parse()
 
+	// just run the prefetcher and quit
+	if *runPrefetcher == true {
+		log.Println("Running prefetcher once.")
+
+		prefetchStops()
+
+		return
+	}
+
+	// run periodically the stop prefetcher
 	go stopPrefetcher()
 
 	fs := http.FileServer(http.Dir("static"))
@@ -60,6 +74,7 @@ func stopsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	stops, err := FetchStops(
+		client,
 		vals["swLat"],
 		vals["swLng"],
 		vals["neLat"],

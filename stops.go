@@ -43,7 +43,7 @@ type TFLStopPoint struct {
 	Lng        float64 `json:"lon"`
 }
 
-func FetchStops(swLat, swLng, neLat, neLng float64) (stops Stops, err error) {
+func FetchStops(client *http.Client, swLat, swLng, neLat, neLng float64) (stops Stops, err error) {
 	// the query params we are going to sent TFL
 	v := url.Values{}
 	v.Add("app_id", config.TFL.AppID)

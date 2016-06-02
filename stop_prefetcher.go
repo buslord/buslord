@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"net/http"
 	"strconv"
 	"time"
 
@@ -19,46 +20,64 @@ func prefetchStops() {
 	conn, _ := redisurl.Connect()
 	defer conn.Close()
 
+	cli := &http.Client{}
+
 	v, err := conn.Do("GET", "prefetch_run")
 	if err != nil {
 		log.Fatal("Prefetch err: " + err.Error())
 	}
-	previousRun, err := strconv.ParseInt(v.(string), 10, 64)
-	if err != nil {
-		log.Fatal("Prefetch err: " + err.Error())
+	previousRun := int64(0)
+	if v != nil {
+		if err != nil {
+			log.Fatal("Prefetch err: " + err.Error())
+		}
 	}
 	run := previousRun + 1
 
 	previousKey := "geostops_" + strconv.FormatInt(run, 10)
 	key := "geostops_" + strconv.FormatInt(run, 10)
 
-	swStartLat := 51.452206
-	swStartLng := -0.263672
-	neStartLat := 51.616222
-	neStartLng := 0.052185
+	log.Println("Prefetcher: using key: " + key)
+
+	// the region we'll iterate
+	swLat := 51.452206
+	swLng := -0.263672
+	neLat := 51.616222
+	neLng := 0.052185
 
 	// total of requests will be latIterations*lngIterations
 	latIterations := 10
 	lngIterations := 10
 
-	latStep := (neStartLat - swStartLat) / float64(latIterations)
-	lngStep := (neStartLng - swStartLng) / float64(lngIterations)
+	latStep := (neLat - swLat) / float64(latIterations)
+	lngStep := (neLng - swLng) / float64(lngIterations)
 
+	log.Printf("Prefetcher: latStep=%f lngStep=%f", latStep, lngStep)
+
+	// we start iterating from nw
+	nwLat := swLat
+	nwLng := neLng
+
+	// we go from north to south
 	for i := 0; i < latIterations; i++ {
+		// and west to east
 		for j := 0; j < lngIterations; j++ {
-			swLat := swStartLat + float64(i)*latStep
-			swLng := swStartLng + float64(j)*lngStep
-			neLat := neStartLat + float64(i)*latStep
-			neLng := neStartLng + float64(j)*lngStep
+			// we iterate the whole reagion with a window
+			swWinLat := nwLat + float64(i)*latStep
+			swWinLng := nwLng + float64(j)*lngStep
+			neWinLat := nwLat + float64(i+1)*latStep
+			neWinLng := nwLng + float64(j+1)*lngStep
 
-			stops, err := FetchStops(swLat, swLng, neLat, neLng)
+			log.Printf("Prefetcher: fetching sw: (%f, %f) ne: (%f, %f)", swWinLat, swWinLng, neWinLat, neWinLng)
+
+			stops, err := FetchStops(cli, swWinLat, swWinLng, neWinLat, neWinLng)
 			if err != nil {
-				log.Println("Prefetch err: " + err.Error())
+				log.Println("Prefetcher: err: " + err.Error())
 				continue
 			}
 
+			log.Printf("Prefetcher: got %d stops", len(stops))
 			for _, stop := range stops {
-
 				sLng := strconv.FormatFloat(stop.LatLng.Lng, 'f', -1, 64)
 				sLat := strconv.FormatFloat(stop.LatLng.Lat, 'f', -1, 64)
 				// GEOADD key longitude latitude member
@@ -66,27 +85,26 @@ func prefetchStops() {
 
 				bs, err := stop.Encode()
 				if err != nil {
-					log.Println("Prefetch err: " + err.Error())
+					log.Println("Prefetcher err: " + err.Error())
 					continue
 				}
 				conn.Do("SET", "stop_"+stop.ID, string(bs))
 			}
 
 			// slowly
-			timer := time.NewTimer(5 * time.Second)
-			<-timer.C
+			time.Sleep(500 * time.Millisecond)
 		}
 	}
 
 	// this is ready. incoming requests should use it
 	_, err = conn.Do("SET", "prefetch_run", strconv.FormatInt(run, 10))
 	if err != nil {
-		log.Println("Prefetch err: " + err.Error())
+		log.Println("Prefetcher err: " + err.Error())
 	}
 
 	// delete the old geo key
 	_, err = conn.Do("DEL", previousKey)
 	if err != nil {
-		log.Println("Prefetch err: " + err.Error())
+		log.Println("Prefetcher err: " + err.Error())
 	}
 }
