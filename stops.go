@@ -1,6 +1,8 @@
 package main
 
 import (
+	"bytes"
+	"encoding/gob"
 	"encoding/json"
 	"net/http"
 	"net/url"
@@ -20,6 +22,20 @@ type Stop struct {
 
 type Stops []Stop
 
+func (stop *Stop) Encode() ([]byte, error) {
+	var buf bytes.Buffer
+	err := gob.NewEncoder(&buf).Encode(stop)
+	if err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), err
+}
+
+func (stop *Stop) Decode(bs []byte) (err error) {
+	err = gob.NewDecoder(bytes.NewBuffer(bs)).Decode(&stop)
+	return
+}
+
 type TFLStopPoint struct {
 	ID         string  `json:"id"`
 	CommonName string  `json:"commonName"`
@@ -27,7 +43,7 @@ type TFLStopPoint struct {
 	Lng        float64 `json:"lon"`
 }
 
-func GetStops(swLat, swLng, neLat, neLng float64) (stops Stops, err error) {
+func FetchStops(swLat, swLng, neLat, neLng float64) (stops Stops, err error) {
 	// the query params we are going to sent TFL
 	v := url.Values{}
 	v.Add("app_id", config.TFL.AppID)

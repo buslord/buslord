@@ -28,6 +28,8 @@ func init() {
 
 func main() {
 
+	go stopPrefetcher()
+
 	fs := http.FileServer(http.Dir("static"))
 	http.Handle("/static/", http.StripPrefix("/static/", fs))
 
@@ -57,7 +59,7 @@ func stopsHandler(w http.ResponseWriter, r *http.Request) {
 		vals[key] = f
 	}
 
-	stops, err := GetStops(
+	stops, err := FetchStops(
 		vals["swLat"],
 		vals["swLng"],
 		vals["neLat"],
