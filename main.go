@@ -11,7 +11,9 @@ import (
 	"time"
 
 	"github.com/bradfitz/gomemcache/memcache"
+	"github.com/garyburd/redigo/redis"
 	"github.com/gorilla/mux"
+	"github.com/soveran/redisurl"
 )
 
 var (
@@ -21,6 +23,7 @@ var (
 
 	mc         *memcache.Client
 	tflBaseURL = "https://api.tfl.gov.uk"
+	conn       redis.Conn
 )
 
 var runPrefetcher = flag.Bool("prefetcher", false, "run the prefetcher now")
@@ -31,6 +34,12 @@ func init() {
 
 func main() {
 	flag.Parse()
+
+	var err error
+	conn, err = redisurl.Connect()
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	// just run the prefetcher and quit
 	if *runPrefetcher == true {
@@ -73,8 +82,7 @@ func stopsHandler(w http.ResponseWriter, r *http.Request) {
 		vals[key] = f
 	}
 
-	stops, err := FetchStops(
-		client,
+	stops, err := GetStops(
 		vals["swLat"],
 		vals["swLng"],
 		vals["neLat"],

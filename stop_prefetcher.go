@@ -28,13 +28,14 @@ func prefetchStops() {
 	}
 	previousRun := int64(0)
 	if v != nil {
+		previousRun, err = strconv.ParseInt(string(v.([]byte)), 10, 64)
 		if err != nil {
 			log.Fatal("Prefetch err: " + err.Error())
 		}
 	}
 	run := previousRun + 1
 
-	previousKey := "geostops_" + strconv.FormatInt(run, 10)
+	// previousKey := "geostops_" + strconv.FormatInt(previousRun, 10)
 	key := "geostops_" + strconv.FormatInt(run, 10)
 
 	log.Println("Prefetcher: using key: " + key)
@@ -44,6 +45,11 @@ func prefetchStops() {
 	swLng := -0.263672
 	neLat := 51.616222
 	neLng := 0.052185
+
+	/*
+	   (51.599820, 0.336456) ne: (51.616222, 0.368042)
+	   (51.452206, 0.052185) ne: (51.468608, 0.083771)
+	*/
 
 	// total of requests will be latIterations*lngIterations
 	latIterations := 10
@@ -63,9 +69,9 @@ func prefetchStops() {
 		// and west to east
 		for j := 0; j < lngIterations; j++ {
 			// we iterate the whole reagion with a window
-			swWinLat := nwLat + float64(i)*latStep
+			swWinLat := nwLat - float64(i+1)*latStep
 			swWinLng := nwLng + float64(j)*lngStep
-			neWinLat := nwLat + float64(i+1)*latStep
+			neWinLat := nwLat - float64(i)*latStep
 			neWinLng := nwLng + float64(j+1)*lngStep
 
 			log.Printf("Prefetcher: fetching sw: (%f, %f) ne: (%f, %f)", swWinLat, swWinLng, neWinLat, neWinLng)
@@ -81,6 +87,7 @@ func prefetchStops() {
 				sLng := strconv.FormatFloat(stop.LatLng.Lng, 'f', -1, 64)
 				sLat := strconv.FormatFloat(stop.LatLng.Lat, 'f', -1, 64)
 				// GEOADD key longitude latitude member
+				log.Printf("GEOADD %s %s %s %s", key, sLng, sLat, "stop_"+stop.ID)
 				conn.Do("GEOADD", key, sLng, sLat, "stop_"+stop.ID)
 
 				bs, err := stop.Encode()
@@ -103,8 +110,8 @@ func prefetchStops() {
 	}
 
 	// delete the old geo key
-	_, err = conn.Do("DEL", previousKey)
-	if err != nil {
-		log.Println("Prefetcher err: " + err.Error())
-	}
+	//_, err = conn.Do("DEL", previousKey)
+	//if err != nil {
+	//	log.Println("Prefetcher err: " + err.Error())
+	//}
 }
