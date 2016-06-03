@@ -12,7 +12,7 @@ import (
 )
 
 func TestETAsHandler(t *testing.T) {
-	config.Cache.Enabled = false
+	config.Cache.ETAsEnabled = false
 
 	reqStopID := "4342abc"
 
@@ -21,7 +21,7 @@ func TestETAsHandler(t *testing.T) {
 			ID:              "-36453",
 			LineName:        "179",
 			DestinationName: "Ilford",
-			TimeToStation:   1266,
+			TimeToStation:   126,
 			ModeName:        "bus",
 			TimeToLive:      "2016-05-30T18:36:29Z",
 		},
@@ -81,7 +81,7 @@ func TestETAsHandler(t *testing.T) {
 }
 
 func TestETAsCacheHandler(t *testing.T) {
-	config.Cache.Enabled = true
+	config.Cache.ETAsEnabled = true
 
 	handlerCalled := false
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -94,7 +94,7 @@ func TestETAsCacheHandler(t *testing.T) {
 				ID:              "-36453",
 				LineName:        "179",
 				DestinationName: "Ilford",
-				TimeToStation:   1266,
+				TimeToStation:   126,
 				ModeName:        "bus",
 				TimeToLive:      time.Now().Add(20 * time.Minute).Format(time.RFC3339),
 			},
