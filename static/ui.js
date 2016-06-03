@@ -1,4 +1,4 @@
-var london = {lat: 51.5074, lng: 0.1278};
+var london = {lat: 51.500246, lng: -0.127504};
 
 var map;
 var marker;

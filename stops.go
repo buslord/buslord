@@ -87,7 +87,10 @@ func GetStops(swLat, swLng, neLat, neLng float64) (stops Stops, err error) {
 		return
 	}
 	rGeoradius := ri.([]interface{})
-	fmt.Println("rGeoradius", rGeoradius)
+	if len(rGeoradius) == 0 {
+		return
+	}
+
 	mgetResponse, err := conn.Do("MGET", rGeoradius...)
 	if err != nil {
 		return
