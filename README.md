@@ -8,6 +8,8 @@ You can visit the app on your browser by going to [https://buslord.advogadoitapo
 
 The client side uses [Google Maps Javascript API V3](https://developers.google.com/maps/documentation/javascript/reference) and vanilla javascript + jquery to fetch data from a server written in go. 
 
+I tried to focus on the backend but ended up doing more than I wanted on the frontend. 
+
 ## A page loads
 
 When a page loads this is what happens:
@@ -40,19 +42,19 @@ and the response is a list of stops on that region:
 ```json
 [
   {
-    id: "490005646E",
-    name: "St Thomas' Hospital / County Hall",
-    lat_lng: {
-      lat: 51.500865,
-      lng: -0.118075
+    "id": "490005646E",
+    "name": "St Thomas' Hospital / County Hall",
+    "lat_lng": {
+      "lat": 51.500865,
+      "lng": -0.118075
     }
   },
   {
-    id: "490008376E",
-    name: "Horse Guards Avenue",
-    lat_lng: {
-      lat: 51.504935,
-      lng: -0.125184
+    "id: "490008376E",
+    "name: "Horse Guards Avenue",
+    "lat_lng: {
+      "lat": 51.504935,
+      "lng": -0.125184
   },
   ...
 },
@@ -69,38 +71,25 @@ and the response is an list of ETAs for that bus stop:
 ```json
 [
   {
-    id: "303938447",
-    line_name: "148",
-    destination_name: "Camberwell Green",
-    eta: 90,
-    mode_name: "bus",
-    time_to_live: "2016-06-03T21:17:24Z"
+    "id": "303938447",
+    "line_name": "148",
+    "destination_name": "Camberwell Green",
+    "eta": 90,
+    "mode_name": "bus",
+    "time_to_live": "2016-06-03T21:17:24Z"
   },
   {
-    id: "-1546743980",
-    line_name: "211",
-    destination_name: "Waterloo",
-    eta: 483,
-    mode_name: "bus",
-    time_to_live: "2016-06-03T21:23:57Z"
+    "id": "-1546743980",
+    "line_name": "211",
+    "destination_name": "Waterloo",
+    "eta": 483,
+    "mode_name": "bus",
+    "time_to_live": "2016-06-03T21:23:57Z"
 },
 ...
 ```
 
 The list is ordered by the arrival time. You have the lines arriving the earliest first. 
-
-## The machine
-
-The server is now deployed at a small VPS. The setup is very simple:
-
- * digital ocean droplet in the london region
- * 14.04 ubuntu
- * standard memcached ubuntu package
- * standard installation of redis
-
-There is no complex (or good) deploy script or continuous integration:
-
-On my machine I run a bash script that is nothing but a series of ``scp`` to the server. 
 
 ## Caching
 
@@ -136,6 +125,21 @@ cache:
 buslord -prefetcher=true
 ```
 
+## The machine
+
+The server is now deployed at a small VPS. The setup is very simple:
+
+ * digital ocean droplet in the london region
+ * 14.04 ubuntu
+ * standard memcached ubuntu package
+ * standard installation of redis
+
+There is no complex (or good) deploy script or continuous integration:
+On my machine I run a bash script that is nothing but a series of ``scp`` to the server.
+
+ * TLS using letsencrypt. https is needed or else the browser's geolocation api doesn't work. 
+
+
 ## Cool stuff
 
  * Removing markers from the map
@@ -157,6 +161,7 @@ but I didn't had time:
 
  * Monitoring: I would like to use [Prometheus](htt://prometheus.io) to monitor the app. 
 
+much more
 
 ## Dev environment
 
@@ -210,4 +215,4 @@ Over the code I used the **names** "Stop" and "ETA". TFL uses "StopPoint" and "A
 It happened because I took the top down approach and started at what the rider would see. So I was mostly ignorant of the TFL API naming despite giving it a look before starting to code. I created a ticket to use the TFL names (#3) but I decided not to do it for this excercise. 
 
 The frontend uses non-cool vanilla javascript and the very un-cool jquery. The initial idea of this project was to focus on the backend and do a minimal frontend. But I wanted to have everything at least working so I ended up spending more time on the frontend that I wanted. Ideally a project like this should something cooler like React or Angular. A lot of information could be cached on the client's localStorage too... 
- 
+
