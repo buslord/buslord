@@ -55,11 +55,12 @@ func main() {
 	go stopPrefetcher()
 
 	fs := http.FileServer(http.Dir("static"))
-	http.Handle("/static/", http.StripPrefix("/static/", fs))
+	http.Handle("/s/", http.StripPrefix("/s/", fs))
 
 	r := mux.NewRouter()
 	r.HandleFunc("/stops", stopsHandler).Methods("GET")
 	r.HandleFunc("/etas", etasHandler).Methods("GET")
+	r.HandleFunc("/", homeHandler).Methods("GET")
 	http.Handle("/", r)
 
 	if *useTLS {
@@ -68,6 +69,10 @@ func main() {
 	} else {
 		log.Fatal(http.ListenAndServe(":"+os.Getenv("PORT"), nil))
 	}
+}
+
+func homeHandler(w http.ResponseWriter, r *http.Request) {
+	http.Redirect(w, r, "/s", 301)
 }
 
 func stopsHandler(w http.ResponseWriter, r *http.Request) {

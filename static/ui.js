@@ -49,7 +49,7 @@ function drawStops(stops) {
         position: stop.lat_lng,
         map: map,
         animation: google.maps.Animation.DROP,
-        icon: "/static/bus-marker-icon.png",
+        icon: "/s/bus-marker-icon.png",
         title: stop.name 
       });
       addStopClickListener(marker, stop.id, stop.name);
