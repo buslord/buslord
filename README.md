@@ -216,3 +216,4 @@ It happened because I took the top down approach and started at what the rider w
 
 The frontend uses non-cool vanilla javascript and the very un-cool jquery. The initial idea of this project was to focus on the backend and do a minimal frontend. But I wanted to have everything at least working so I ended up spending more time on the frontend that I wanted. Ideally a project like this should something cooler like React or Angular. A lot of information could be cached on the client's localStorage too... 
 
+The [domain name](https://buslord.advogadoitapoa.com) I used for the app was just something I bought for my mom and was laying around. 
