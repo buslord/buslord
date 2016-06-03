@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"sort"
 	"time"
 
 	"github.com/bradfitz/gomemcache/memcache"
@@ -45,6 +46,11 @@ func (etas *ETAs) Decode(bs []byte) (err error) {
 	err = gob.NewDecoder(bytes.NewBuffer(bs)).Decode(&etas)
 	return
 }
+
+// implements sort.Interface
+func (a ETAs) Len() int           { return len(a) }
+func (a ETAs) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a ETAs) Less(i, j int) bool { return a[i].ETA < a[j].ETA }
 
 func GetETAs(stopID string) (etas ETAs, err error) {
 
@@ -136,5 +142,9 @@ func FetchEtas(stopID string) (ETAs, error) {
 		}
 		etas = append(etas, eta)
 	}
+
+	// sort
+	sort.Sort(etas)
+
 	return etas, nil
 }
