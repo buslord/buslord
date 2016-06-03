@@ -48,7 +48,7 @@ func (etas *ETAs) Decode(bs []byte) (err error) {
 
 func GetETAs(stopID string) (etas ETAs, err error) {
 
-	if config.Cache.Enabled == false {
+	if config.Cache.ETAsEnabled == false {
 		return FetchEtas(stopID)
 	}
 

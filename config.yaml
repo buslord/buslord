@@ -1,7 +1,14 @@
 cache: 
-        enabled: true 
-        memcache-servers:
-                - "127.0.0.1:11211"
+  etas-enabled: true 
+  stops-enabled: false
+  memcache-servers:
+    - "127.0.0.1:11211"
+
 tfl:
-        app-id: "4b537b47"
-        app-key: "5173db496aaaf2f26a45dbfb587597d1"
+  app-id: "4b537b47"
+  app-key: "5173db496aaaf2f26a45dbfb587597d1"
+
+tls:
+  cert-file: "/etc/letsencrypt/live/buslord.advogadoitapoa.com/fullchain.pem"  
+  key-file: "/etc/letsencrypt/live/buslord.advogadoitapoa.com/privkey.pem"
+        

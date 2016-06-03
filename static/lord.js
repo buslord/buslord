@@ -17,7 +17,6 @@ function updateStops(bounds) {
 }
 
 function fetchETAs(stopID, callback) {
-  console.log("gonna fetch etas");
   $.getJSON('/etas?stop=' + stopID, function(data) {
       callback(data);
   });

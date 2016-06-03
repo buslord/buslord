@@ -9,13 +9,18 @@ import (
 
 var config struct {
 	Cache struct {
-		Enabled         bool     `yaml:"enabled"`
+		ETAsEnabled     bool     `yaml:"etas-enabled"`
+		StopsEnabled    bool     `yaml:"stops-enabled"`
 		MemcacheServers []string `yaml:"memcache-servers"`
 	} `yaml:"cache"`
 	TFL struct {
 		AppID  string `yaml:"app-id"`
 		AppKey string `yaml:"app-key"`
 	} `yaml:"tfl"`
+	TLS struct {
+		CertFile string `yaml:"cert-file"`
+		KeyFile  string `yaml:"key-file"`
+	}
 }
 
 func init() {

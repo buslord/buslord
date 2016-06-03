@@ -50,7 +50,7 @@ type TFLStopPoint struct {
 
 func GetStops(swLat, swLng, neLat, neLng float64) (stops Stops, err error) {
 
-	if config.Cache.Enabled == false {
+	if config.Cache.StopsEnabled == false {
 		log.Println("Cache miss")
 		return FetchStops(client, swLat, swLng, neLat, neLng)
 	}

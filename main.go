@@ -27,6 +27,7 @@ var (
 )
 
 var runPrefetcher = flag.Bool("prefetcher", false, "run the prefetcher now")
+var useTLS = flag.Bool("tls", false, "use tls or not")
 
 func init() {
 	mc = memcache.New(config.Cache.MemcacheServers...)
@@ -61,7 +62,12 @@ func main() {
 	r.HandleFunc("/etas", etasHandler).Methods("GET")
 	http.Handle("/", r)
 
-	log.Fatal(http.ListenAndServe(":"+os.Getenv("PORT"), nil))
+	if *useTLS {
+		log.Println("useTLS")
+		log.Fatal(http.ListenAndServeTLS(":"+os.Getenv("PORT"), config.TLS.CertFile, config.TLS.KeyFile, nil))
+	} else {
+		log.Fatal(http.ListenAndServe(":"+os.Getenv("PORT"), nil))
+	}
 }
 
 func stopsHandler(w http.ResponseWriter, r *http.Request) {

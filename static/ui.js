@@ -78,8 +78,8 @@ function addStopClickListener(marker, stopID, stopName) {
 function buildAndShowEtas(stopID, stopName) {
     $("#etas-popup").show();
     $("#etas-popup .stopName").html(stopName);
-    $("#etas-popup table").html("");
     fetchETAs(stopID, function(etas) {
+      $("#etas-popup table").html("");
       $("#etas-popup table").append("<tr><th>line</th><th>arrival</th></tr>");
       for (var j = 0; j < etas.length; j++) {
           var eta = etas[j];
@@ -107,8 +107,8 @@ function countdownTick() {
       }
       var seconds = val%60;
       sVal += seconds + "s";
-  
-      if ((mins == 0) && (seconds < 0)) {
+ 
+      if ((mins <= 0) && (seconds <= 0)) {
         buildAndShowEtas($(el).attr("stop_id"), $(el).attr("stop_name"));
       } else {
         $(el).html(sVal);
@@ -130,6 +130,7 @@ if ("geolocation" in navigator) {
     var latLng = {lat: position.coords.latitude, lng: position.coords.longitude}; 
 
     marker.setPosition(latLng);
+    map.setCenter(latLng);
 
     $("#welcome-popup").hide();
 
